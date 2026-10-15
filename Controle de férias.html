@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<!-- saved from url=(0065)file:///C:/Users/17792/Downloads/Controle%20de%20f%C3%A9rias.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controle de férias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./Controle de férias_files/css2" rel="stylesheet">
+<script src="./Controle de férias_files/xlsx.full.min.js.download"></script>
+<script src="./Controle de férias_files/jspdf.umd.min.js.download"></script>
+<script src="./Controle de férias_files/jspdf.plugin.autotable.min.js.download"></script>
+<style>
+:root{
+  --bg:#f3f6f8; --surface:#ffffff; --surface-2:#eef3f6; --ink:#10273a; --muted:#56697a;
+  --line:#d6dfe5; --accent:#0d6566; --accent-ink:#ffffff; --sun:#f0b429; --sel:rgba(240,180,41,.20);
+  --weekend:rgba(16,39,58,.045); --hol:rgba(180,35,24,.08); --danger:#b42318; --warn-bg:#fff6dd; --warn-ink:#7a4d00;
+  --err-bg:#fdecea; --namew:210px;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1920; --surface:#15232d; --surface-2:#1b2c37; --ink:#e4edf2; --muted:#93a6b3;
+    --line:#2a3c48; --accent:#45b3ae; --accent-ink:#06201f; --sun:#f5c451; --sel:rgba(245,196,81,.16);
+    --weekend:rgba(255,255,255,.035); --hol:rgba(242,134,124,.12); --danger:#f2867c; --warn-bg:#3a2e10; --warn-ink:#f5d48a;
+    --err-bg:#3d1a17; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1920; --surface:#15232d; --surface-2:#1b2c37; --ink:#e4edf2; --muted:#93a6b3;
+  --line:#2a3c48; --accent:#45b3ae; --accent-ink:#06201f; --sun:#f5c451; --sel:rgba(245,196,81,.16);
+  --weekend:rgba(255,255,255,.035); --hol:rgba(242,134,124,.12); --danger:#f2867c; --warn-bg:#3a2e10; --warn-ink:#f5d48a;
+  --err-bg:#3d1a17; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.sr{position:absolute;left:-9999px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px clamp(14px,3vw,32px) 64px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.top h1{margin:0;font-size:1.5rem;font-weight:800;letter-spacing:-.01em}
+.top p{margin:2px 0 0;color:var(--muted);font-size:.95rem}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600;font-size:.95rem}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.88rem;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;font-size:.9rem;margin-bottom:16px}
+
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:28px}
+.query{padding:26px 26px 24px;background:var(--ink);color:var(--bg);display:flex;flex-direction:column;gap:14px}
+.query .lead{margin:0;font-size:1rem;opacity:.8}
+.query .weekday{margin:0;font-size:1.05rem;font-weight:500;opacity:.85}
+.query .bigdate{margin:-6px 0 0;font-size:clamp(1.9rem,4.2vw,2.9rem);line-height:1.05;font-weight:800;letter-spacing:-.02em}
+.query .holnote{margin:-4px 0 0;font-size:.92rem;color:var(--sun)}
+.query .count{margin:4px 0 0;font-size:1.05rem}
+.query .count strong{background:var(--sun);color:#10273a;border-radius:6px;padding:1px 8px;font-weight:800}
+.qctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:auto}
+.qctl input[type=date]{background:transparent;border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);color:var(--bg);border-radius:8px;padding:7px 10px;color-scheme:dark}
+.qbtn{background:transparent;border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);color:var(--bg);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600}
+.qbtn:hover{background:color-mix(in srgb,var(--bg) 12%,transparent)}
+.results{padding:20px 22px;display:flex;flex-direction:column;gap:16px;min-height:220px}
+.results h2,.section h2{margin:0;font-size:1.05rem;font-weight:700}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.plist li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.plist li:first-child{border-top:0}
+.plist .name{font-weight:600}
+.plist .sub{color:var(--muted);font-size:.86rem}
+.plist .ret{text-align:right;font-size:.86rem;color:var(--muted)}
+.plist .ret b{display:block;color:var(--ink);font-size:.95rem}
+.empty{color:var(--muted);margin:0}
+.upcoming{border-top:1px dashed var(--line);padding-top:14px}
+.upcoming h3{margin:0 0 6px;font-size:.92rem;font-weight:600;color:var(--muted)}
+
+.section{margin-bottom:30px}
+.sechead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.monthnav{display:flex;align-items:center;gap:6px}
+.monthnav .label{min-width:150px;text-align:center;font-weight:700;text-transform:capitalize}
+.tlbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+.tl{min-width:max-content}
+.tlrow{display:grid;align-items:stretch;border-top:1px solid var(--line);min-height:44px}
+.tlrow.head{border-top:0;min-height:0}
+.tlname{grid-row:1;grid-column:1;position:sticky;left:0;z-index:3;background:var(--surface);padding:7px 12px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;min-width:0}
+.tlname .n{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlname .s{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dcell{grid-row:1}
+.dcell.we{background:var(--weekend)}
+.dcell.hol{background:var(--hol)}
+.dcell.sel{background:var(--sel)}
+.dhead{grid-row:1;border:0;background:transparent;cursor:pointer;padding:6px 0;display:flex;flex-direction:column;align-items:center;font-size:.72rem;color:var(--muted);line-height:1.2}
+.dhead b{font-size:.85rem;color:var(--ink);font-weight:600;width:24px;height:24px;display:grid;place-items:center;border-radius:50%}
+.dhead.we{background:var(--weekend)}
+.dhead.hol{background:var(--hol)}
+.dhead.hol b{color:var(--danger)}
+.dhead.sel{background:var(--sel)}
+.dhead.today b{background:var(--accent);color:var(--accent-ink)}
+.dhead:hover b{outline:1px solid var(--line)}
+.bar{grid-row:1;z-index:2;align-self:center;height:26px;margin:0 2px;border-radius:6px;color:#fff;font-size:.74rem;font-weight:600;display:flex;align-items:center;padding:0 7px;white-space:nowrap;overflow:hidden;cursor:pointer;border:0}
+.bar.premio{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px)}
+.bar.cut-l{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+.bar.cut-r{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+.tlempty{padding:28px;color:var(--muted);text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:10px;font-size:.84rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:26px;height:12px;border-radius:3px;background:var(--muted)}
+.sw.pr{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px)}
+.sw.hl{background:var(--hol);border:1px solid var(--line)}
+.sw.wk{background:var(--weekend);border:1px solid var(--line)}
+
+.tools{display:flex;gap:8px;align-items:center}
+.search{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;min-width:220px}
+.tblbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+thead th{border-top:0;font-weight:600;color:var(--muted);font-size:.84rem;background:var(--surface-2)}
+td.nm{font-weight:600;white-space:normal;min-width:160px}
+td .small{display:block;font-size:.8rem;color:var(--muted);font-weight:400}
+td.acts{text-align:right}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600;background:var(--surface-2);color:var(--muted)}
+.tag.on{background:var(--sun);color:#10273a}
+.tag.next{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.tag.alert{background:var(--err-bg);color:var(--danger)}
+.setor{display:inline-flex;align-items:center;gap:7px}
+
+.overlay{position:fixed;inset:0;background:rgba(6,16,24,.55);display:none;align-items:flex-start;justify-content:center;padding:max(5vh,env(safe-area-inset-top,0px)) 14px 14px;z-index:20;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:580px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.modal h2{margin:0 0 16px;font-size:1.2rem}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label,.plabel{font-size:.88rem;font-weight:600}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mod{border:0;padding:0;margin:0 0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mod legend{font-size:.88rem;font-weight:600;margin-bottom:6px;padding:0}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt b{display:block;font-size:.95rem}
+.opt small{display:block;color:var(--muted);font-size:.82rem;line-height:1.35}
+.prow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px}
+.prow .field{margin:0}
+.pdays{font-size:.85rem;color:var(--muted);padding-bottom:10px;min-width:96px;text-align:right;line-height:1.3}
+.check{display:flex;align-items:center;gap:8px;margin:4px 0 14px;font-size:.92rem;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.total{font-size:.95rem;margin:4px 0 12px;font-weight:600}
+.msg{border-radius:8px;padding:9px 12px;font-size:.88rem;margin-bottom:12px}
+.msg.err{background:var(--err-bg);color:var(--danger)}
+.msg.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+
+.holyear{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.holyear b{min-width:52px;text-align:center}
+.hollist{list-style:none;margin:0 0 14px;padding:0;max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px}
+.hollist li{display:grid;grid-template-columns:96px 1fr auto auto;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);font-size:.9rem}
+.hollist li:first-child{border-top:0}
+.hollist .wd{display:block;font-size:.76rem;color:var(--muted)}
+.hollist .emptyli{display:block;color:var(--muted)}
+.holadd{display:grid;grid-template-columns:150px 1fr 150px auto;gap:8px;align-items:end;border-top:1px dashed var(--line);padding-top:14px}
+.holadd .field{margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:.92rem;z-index:30;display:none;max-width:90vw}
+.toast.show{display:block}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr}
+  :root{--namew:140px}
+  .search{min-width:0;width:100%}
+  .tools{width:100%}
+  .holadd{grid-template-columns:1fr 1fr}
+  .holadd .btn{grid-column:1/-1}
+}
+@media (max-width:480px){
+  .prow,.mod,.two{grid-template-columns:1fr 1fr}
+  .mod{grid-template-columns:1fr}
+  .pdays{grid-column:1/-1;text-align:left;padding:0}
+  .hollist li{grid-template-columns:80px 1fr auto}
+  .hollist li .tag{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Controle de férias</h1>
+      <p>Férias regulamentares e férias-prêmio por servidor e setor</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnFer">Feriados</button>
+      <button class="btn" id="btnXlsx" hidden="">Exportar planilha</button>
+      <button class="btn" id="btnPdf" hidden="">Relatório em PDF</button>
+      <button class="btn primary" id="btnNovo">Agendar férias</button>
+    </div>
+  </header>
+
+  <div id="notice" class="notice">Os dados estão sendo guardados apenas neste navegador. Abra a página pelo link do claude.ai para que a equipe compartilhe o mesmo cadastro.</div>
+  <nav class="chips" id="chips" aria-label="Filtrar por setor"></nav>
+
+  <section class="hero" aria-labelledby="qlead">
+    <div class="query">
+      <p class="lead" id="qlead">Quem está de férias em</p>
+      <p class="weekday" id="qWeekday">quinta-feira</p>
+      <p class="bigdate" id="qDate">15 de outubro de 2026</p>
+      <p class="holnote" id="qHol" hidden=""></p>
+      <p class="count" id="qCount">Ninguém de férias nesta data</p>
+      <div class="qctl">
+        <button class="qbtn" id="qPrev" aria-label="Dia anterior">‹</button>
+        <button class="qbtn" id="qToday">Hoje</button>
+        <button class="qbtn" id="qNext" aria-label="Próximo dia">›</button>
+        <input type="date" id="qInput" aria-label="Escolher data">
+      </div>
+    </div>
+    <div class="results">
+      <h2>De férias nesta data</h2>
+      <div id="rList"><p class="empty">Nenhuma férias cadastrada ainda. Use “Agendar férias” para incluir o primeiro período.</p></div>
+      <div class="upcoming">
+        <h3>Saem de férias nos 30 dias seguintes</h3>
+        <div id="uList"><p class="empty">Nenhuma saída prevista.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="calTitle">
+    <div class="sechead">
+      <h2 id="calTitle">Calendário do mês</h2>
+      <div class="monthnav">
+        <button class="btn small" id="mPrev" aria-label="Mês anterior">‹</button>
+        <span class="label" id="mLabel">outubro de 2026</span>
+        <button class="btn small" id="mNext" aria-label="Próximo mês">›</button>
+      </div>
+    </div>
+    <div class="tlbox"><div class="tl" id="tl"><div class="tlrow head" style="grid-template-columns:var(--namew) repeat(31, minmax(30px,1fr))"><div class="tlname"><span class="s">Servidor</span></div><button class="dhead" style="grid-column:2" data-day="2026-10-01" title="" aria-label="Ver quem está de férias em 01/10/2026">Q<b>1</b></button><button class="dhead" style="grid-column:3" data-day="2026-10-02" title="" aria-label="Ver quem está de férias em 02/10/2026">S<b>2</b></button><button class="dhead we" style="grid-column:4" data-day="2026-10-03" title="" aria-label="Ver quem está de férias em 03/10/2026">S<b>3</b></button><button class="dhead we" style="grid-column:5" data-day="2026-10-04" title="" aria-label="Ver quem está de férias em 04/10/2026">D<b>4</b></button><button class="dhead" style="grid-column:6" data-day="2026-10-05" title="" aria-label="Ver quem está de férias em 05/10/2026">S<b>5</b></button><button class="dhead" style="grid-column:7" data-day="2026-10-06" title="" aria-label="Ver quem está de férias em 06/10/2026">T<b>6</b></button><button class="dhead" style="grid-column:8" data-day="2026-10-07" title="" aria-label="Ver quem está de férias em 07/10/2026">Q<b>7</b></button><button class="dhead" style="grid-column:9" data-day="2026-10-08" title="" aria-label="Ver quem está de férias em 08/10/2026">Q<b>8</b></button><button class="dhead" style="grid-column:10" data-day="2026-10-09" title="" aria-label="Ver quem está de férias em 09/10/2026">S<b>9</b></button><button class="dhead we" style="grid-column:11" data-day="2026-10-10" title="" aria-label="Ver quem está de férias em 10/10/2026">S<b>10</b></button><button class="dhead we" style="grid-column:12" data-day="2026-10-11" title="" aria-label="Ver quem está de férias em 11/10/2026">D<b>11</b></button><button class="dhead" style="grid-column:13" data-day="2026-10-12" title="" aria-label="Ver quem está de férias em 12/10/2026">S<b>12</b></button><button class="dhead" style="grid-column:14" data-day="2026-10-13" title="" aria-label="Ver quem está de férias em 13/10/2026">T<b>13</b></button><button class="dhead" style="grid-column:15" data-day="2026-10-14" title="" aria-label="Ver quem está de férias em 14/10/2026">Q<b>14</b></button><button class="dhead sel today" style="grid-column:16" data-day="2026-10-15" title="" aria-label="Ver quem está de férias em 15/10/2026">Q<b>15</b></button><button class="dhead" style="grid-column:17" data-day="2026-10-16" title="" aria-label="Ver quem está de férias em 16/10/2026">S<b>16</b></button><button class="dhead we" style="grid-column:18" data-day="2026-10-17" title="" aria-label="Ver quem está de férias em 17/10/2026">S<b>17</b></button><button class="dhead we" style="grid-column:19" data-day="2026-10-18" title="" aria-label="Ver quem está de férias em 18/10/2026">D<b>18</b></button><button class="dhead" style="grid-column:20" data-day="2026-10-19" title="" aria-label="Ver quem está de férias em 19/10/2026">S<b>19</b></button><button class="dhead" style="grid-column:21" data-day="2026-10-20" title="" aria-label="Ver quem está de férias em 20/10/2026">T<b>20</b></button><button class="dhead" style="grid-column:22" data-day="2026-10-21" title="" aria-label="Ver quem está de férias em 21/10/2026">Q<b>21</b></button><button class="dhead" style="grid-column:23" data-day="2026-10-22" title="" aria-label="Ver quem está de férias em 22/10/2026">Q<b>22</b></button><button class="dhead" style="grid-column:24" data-day="2026-10-23" title="" aria-label="Ver quem está de férias em 23/10/2026">S<b>23</b></button><button class="dhead we" style="grid-column:25" data-day="2026-10-24" title="" aria-label="Ver quem está de férias em 24/10/2026">S<b>24</b></button><button class="dhead we" style="grid-column:26" data-day="2026-10-25" title="" aria-label="Ver quem está de férias em 25/10/2026">D<b>25</b></button><button class="dhead" style="grid-column:27" data-day="2026-10-26" title="" aria-label="Ver quem está de férias em 26/10/2026">S<b>26</b></button><button class="dhead" style="grid-column:28" data-day="2026-10-27" title="" aria-label="Ver quem está de férias em 27/10/2026">T<b>27</b></button><button class="dhead" style="grid-column:29" data-day="2026-10-28" title="" aria-label="Ver quem está de férias em 28/10/2026">Q<b>28</b></button><button class="dhead" style="grid-column:30" data-day="2026-10-29" title="" aria-label="Ver quem está de férias em 29/10/2026">Q<b>29</b></button><button class="dhead" style="grid-column:31" data-day="2026-10-30" title="" aria-label="Ver quem está de férias em 30/10/2026">S<b>30</b></button><button class="dhead we" style="grid-column:32" data-day="2026-10-31" title="" aria-label="Ver quem está de férias em 31/10/2026">S<b>31</b></button></div><div class="tlempty">Nenhum servidor de férias neste mês.</div></div></div>
+    <div class="legend">
+      <span><i class="sw"></i>Férias regulamentares</span>
+      <span><i class="sw pr"></i>Férias-prêmio</span>
+      <span><i class="sw wk"></i>Fim de semana</span>
+      <span><i class="sw hl"></i>Feriado ou ponto facultativo</span>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="listTitle">
+    <div class="sechead">
+      <h2 id="listTitle">Férias cadastradas</h2>
+      <div class="tools"><input class="search" id="busca" type="search" placeholder="Buscar servidor" aria-label="Buscar servidor"></div>
+    </div>
+    <div class="tblbox" id="tbl"><div class="tlempty">Nenhuma férias cadastrada ainda.</div></div>
+  </section>
+</div>
+
+<!-- formulário de férias -->
+<div class="overlay" id="ovForm" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <form class="modal" id="form" novalidate="">
+    <h2 id="fTitle">Agendar férias</h2>
+    <fieldset class="mod">
+      <legend>Modalidade</legend>
+      <label class="opt"><input type="radio" name="tipo" value="regulamentar" checked=""><span><b>Férias regulamentares</b><small>25 dias úteis, em até dois períodos</small></span></label>
+      <label class="opt"><input type="radio" name="tipo" value="premio"><span><b>Férias-prêmio</b><small>30 dias corridos, em período único</small></span></label>
+    </fieldset>
+    <div class="field">
+      <label for="fNome">Nome do servidor</label>
+      <input id="fNome" autocomplete="off" required="">
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fSetor">Setor</label>
+        <input id="fSetor" list="setores" autocomplete="off" required="">
+        <datalist id="setores"></datalist>
+      </div>
+      <div class="field">
+        <label for="fExerc">Exercício de referência (opcional)</label>
+        <input id="fExerc" autocomplete="off" placeholder="Ex.: 2025/2026">
+      </div>
+    </div>
+    <span class="plabel" id="p1label">1º período</span>
+    <div class="prow">
+      <div class="field"><label for="p1i">Início</label><input type="date" id="p1i"></div>
+      <div class="field"><label for="p1f">Fim</label><input type="date" id="p1f"></div>
+      <span class="pdays" id="p1d"></span>
+    </div>
+    <label class="check" id="fracWrap"><input type="checkbox" id="fFrac"> Fracionar em dois períodos</label>
+    <div id="p2box" hidden="">
+      <span class="plabel">2º período</span>
+      <div class="prow">
+        <div class="field"><label for="p2i">Início</label><input type="date" id="p2i"></div>
+        <div class="field"><label for="p2f">Fim</label><input type="date" id="p2f"></div>
+        <span class="pdays" id="p2d"></span>
+      </div>
+    </div>
+    <p class="total" id="fTotal"></p>
+    <div id="fWarn"></div>
+    <div id="fErr"></div>
+    <div class="mfoot">
+      <button type="button" class="btn ghost" id="fCancel">Cancelar</button>
+      <button type="submit" class="btn primary" id="fSave">Salvar férias</button>
+    </div>
+  </form>
+</div>
+
+<!-- feriados -->
+<div class="overlay" id="ovHol" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="modal" style="max-width:680px">
+    <h2 id="hTitle">Feriados e pontos facultativos</h2>
+    <p class="empty" style="margin:-8px 0 14px;font-size:.9rem">Estes dias não contam como dias úteis nas férias regulamentares nem na data de retorno.</p>
+    <div class="holyear">
+      <button class="btn small" id="hPrev" aria-label="Ano anterior">‹</button>
+      <b id="hYear"></b>
+      <button class="btn small" id="hNext" aria-label="Próximo ano">›</button>
+      <button class="btn small" id="hNac" style="margin-left:auto">Incluir feriados nacionais do ano</button>
+    </div>
+    <ul class="hollist" id="hList"></ul>
+    <form class="holadd" id="hForm" novalidate="">
+      <div class="field"><label for="hData">Data</label><input type="date" id="hData"></div>
+      <div class="field"><label for="hDesc">Descrição</label><input id="hDesc" placeholder="Ex.: Aniversário do município" autocomplete="off"></div>
+      <div class="field"><label for="hTipo">Tipo</label>
+        <select id="hTipo"><option value="municipal">Municipal</option><option value="facultativo">Ponto facultativo</option><option value="estadual">Estadual</option><option value="nacional">Nacional</option></select>
+      </div>
+      <button class="btn primary" type="submit">Incluir</button>
+    </form>
+    <div id="hErr" style="margin-top:10px"></div>
+    <div class="mfoot"><button class="btn ghost" id="hClose">Fechar</button></div>
+  </div>
+</div>
+
+<!-- confirmação -->
+<div class="overlay" id="ovDel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="modal">
+    <h2 id="dTitle">Excluir férias</h2>
+    <p id="dText"></p>
+    <div class="mfoot">
+      <button class="btn ghost" id="dCancel">Cancelar</button>
+      <button class="btn danger" id="dOk">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- regras ---------- */
+const LIMITE_REG = 25;   // dias úteis
+const LIMITE_PREMIO = 30; // dias corridos
+const TIPOS = { regulamentar: 'Férias regulamentares', premio: 'Férias-prêmio' };
+const TIPOS_FER = { municipal: 'Municipal', facultativo: 'Ponto facultativo', estadual: 'Estadual', nacional: 'Nacional' };
+
+/* ---------- utilidades de data ---------- */
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const corridos = (a,b) => Math.round((parse(b)-parse(a))/86400000)+1;
+const fmt = s => parse(s).toLocaleDateString('pt-BR');
+const fmtC = s => { const d = parse(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+const hoje = () => iso(new Date());
+const validDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const overlap = (a,b) => a.inicio <= b.fim && b.inicio <= a.fim;
+
+const PALETA = ['#0f766e','#4f46e5','#b45309','#be185d','#4d7c0f','#0369a1','#7c3aed','#a16207','#9f1239','#155e75'];
+
+/* ---------- estado ---------- */
+const st = {
+  recs: [], fer: {}, carregado: false, setor: '', busca: '',
+  data: hoje(), mes: null, canWrite: true, editId: null, delId: null, holYear: new Date().getFullYear()
+};
+st.mes = { y: parse(st.data).getFullYear(), m: parse(st.data).getMonth() };
+let store = null, downloads = null;
+const $ = id => document.getElementById(id);
+
+const isFeriado = ds => !!st.fer[ds];
+const isUtil = ds => { const w = parse(ds).getDay(); return w !== 0 && w !== 6 && !isFeriado(ds); };
+function uteis(a,b){ let n = 0, s = a; while (s <= b){ if (isUtil(s)) n++; s = addDays(s,1); } return n; }
+function fimPorUteis(inicio, n){ let s = inicio, c = 0, guard = 0; while (guard++ < 400){ if (isUtil(s)){ c++; if (c >= n) return s; } s = addDays(s,1); } return s; }
+function retorno(fim){ let s = addDays(fim,1); while (!isUtil(s)) s = addDays(s,1); return s; }
+
+function tipoDe(r){ return r.tipo === 'premio' ? 'premio' : 'regulamentar'; }
+function periodos(r){ return (Array.isArray(r.periodos) ? r.periodos : []).filter(p => validDate(p.inicio) && validDate(p.fim)); }
+function contagem(r){
+  const ps = periodos(r), t = tipoDe(r);
+  if (t === 'premio'){ const n = ps.reduce((s,p)=>s+corridos(p.inicio,p.fim),0); return { n, un: 'corridos', excede: n > LIMITE_PREMIO, lim: LIMITE_PREMIO }; }
+  const n = ps.reduce((s,p)=>s+uteis(p.inicio,p.fim),0); return { n, un: 'úteis', excede: n > LIMITE_REG, lim: LIMITE_REG };
+}
+function setores(){ return [...new Set(st.recs.map(r => (r.setor||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')); }
+function corSetor(s){ const i = setores().indexOf(s); return PALETA[(i<0?0:i) % PALETA.length]; }
+function visiveis(){ return st.recs.filter(r => !st.setor || r.setor === st.setor); }
+function situacaoTxt(r){
+  const t = hoje(), ps = periodos(r);
+  if (ps.some(p => p.inicio <= t && t <= p.fim)) return 'De férias';
+  if (ps.some(p => p.inicio > t)) return 'Agendada';
+  return 'Concluída';
+}
+
+/* ---------- feriados nacionais ---------- */
+function pascoa(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+  h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+  mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1; return iso(new Date(y,mo-1,da));
+}
+function nacionais(y){
+  const p = pascoa(y);
+  return [
+    [`${y}-01-01`,'Confraternização Universal'],[addDays(p,-2),'Sexta-feira da Paixão'],[`${y}-04-21`,'Tiradentes'],
+    [`${y}-05-01`,'Dia do Trabalho'],[`${y}-09-07`,'Independência do Brasil'],[`${y}-10-12`,'Nossa Senhora Aparecida'],
+    [`${y}-11-02`,'Finados'],[`${y}-11-15`,'Proclamação da República'],[`${y}-11-20`,'Dia Nacional de Zumbi e da Consciência Negra'],
+    [`${y}-12-25`,'Natal']
+  ];
+}
+
+/* ---------- persistência ---------- */
+const LKEY = 'controle-ferias-v1', LKEYF = 'controle-ferias-feriados-v1';
+function useLocal(msg){
+  try { st.recs = JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch(e){ st.recs = []; }
+  try { st.fer = JSON.parse(localStorage.getItem(LKEYF) || '{}'); } catch(e){ st.fer = {}; }
+  st.carregado = true;
+  const persist = () => { try { localStorage.setItem(LKEY, JSON.stringify(st.recs)); localStorage.setItem(LKEYF, JSON.stringify(st.fer)); } catch(e){} };
+  store = {
+    async save(id, d){ if (id) st.recs = st.recs.map(r => r.id===id ? {id, ...d} : r); else st.recs.push({ id: 'l'+Date.now().toString(36), ...d }); persist(); render(); },
+    async remove(id){ st.recs = st.recs.filter(r => r.id !== id); persist(); render(); },
+    async saveFer(ds, d){ st.fer[ds] = d; persist(); render(); renderHol(); },
+    async removeFer(ds){ delete st.fer[ds]; persist(); render(); renderHol(); }
+  };
+  if (msg) showNotice(msg);
+  render();
+}
+
+async function initStore(){
+  let db = null;
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch(e){ db = null; }
+  if (!db){ useLocal('Os dados estão sendo guardados apenas neste navegador. Abra a página pelo link do claude.ai para que a equipe compartilhe o mesmo cadastro.'); return; }
+  const col = db.collection('ferias'), colF = db.collection('feriados');
+  let okA = false, okB = false;
+  const onErr = err => {
+    if (err && err.code === 'revoked'){ st.canWrite = false; showNotice('O acesso a esta página foi alterado. Os dados não podem mais ser atualizados nesta sessão.'); render(); }
+    else showToast('Não foi possível atualizar os dados. Recarregue a página.');
+  };
+  col.onSnapshot(snap => { st.recs = snap.docs.map(d => ({ id: d.id, ...d.data() })); okA = true; st.carregado = okA && okB; render(); }, onErr);
+  colF.onSnapshot(snap => { const f = {}; snap.docs.forEach(d => { f[d.id] = d.data(); }); st.fer = f; okB = true; st.carregado = okA && okB; render(); renderHol(); }, onErr);
+  store = {
+    save: (id, d) => id ? col.doc(id).set(d) : col.add(d),
+    remove: id => col.doc(id).delete(),
+    saveFer: (ds, d) => colF.doc(ds).set(d),
+    removeFer: ds => colF.doc(ds).delete()
+  };
+  try {
+    const user = await window.claude.use('user');
+    const pode = user ? await user.can('data.write') : null;
+    if (pode === false){ st.canWrite = false; showNotice('Você tem acesso apenas para consulta. Peça ao responsável permissão de colaborador para cadastrar férias e feriados.'); render(); }
+  } catch(e){}
+}
+
+async function initDownloads(){
+  try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch(e){ downloads = null; }
+  $('btnXlsx').hidden = !downloads; $('btnPdf').hidden = !downloads;
+}
+
+/* ---------- interface ---------- */
+function showNotice(t){ const n = $('notice'); n.textContent = t; n.hidden = false; }
+let toastT;
+function showToast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 3000); }
+
+function render(){
+  $('btnNovo').disabled = !st.canWrite;
+  renderChips(); renderHero(); renderTimeline(); renderTable();
+}
+
+function renderChips(){
+  const ss = setores();
+  if (st.setor && !ss.includes(st.setor)) st.setor = '';
+  $('setores').innerHTML = ss.map(s => `<option value="${esc(s)}">`).join('');
+  const c = $('chips');
+  if (!ss.length){ c.innerHTML = ''; return; }
+  c.innerHTML = `<button class="chip" data-s="" aria-pressed="${!st.setor}">Todos os setores</button>` +
+    ss.map(s => `<button class="chip" data-s="${esc(s)}" aria-pressed="${st.setor===s}"><span class="dot" style="background:${corSetor(s)}"></span>${esc(s)}</button>`).join('');
+}
+
+function emFerias(ds){
+  const on = [];
+  visiveis().forEach(r => periodos(r).forEach((p,i) => { if (p.inicio <= ds && ds <= p.fim) on.push({r,p,i}); }));
+  return on.sort((a,b) => a.p.fim.localeCompare(b.p.fim) || a.r.nome.localeCompare(b.r.nome,'pt-BR'));
+}
+
+function renderHero(){
+  const d = parse(st.data);
+  $('qWeekday').textContent = d.toLocaleDateString('pt-BR',{weekday:'long'});
+  $('qDate').textContent = d.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  $('qInput').value = st.data;
+  const f = st.fer[st.data];
+  $('qHol').hidden = !f; if (f) $('qHol').textContent = `${TIPOS_FER[f.tipo] || 'Feriado'}: ${f.descricao}`;
+  if (!st.carregado){ $('qCount').textContent = 'Carregando…'; $('rList').innerHTML = ''; $('uList').innerHTML=''; return; }
+
+  const on = emFerias(st.data), n = on.length;
+  $('qCount').innerHTML = n === 0 ? 'Ninguém de férias nesta data' : `<strong>${n}</strong> ${n===1?'servidor de férias':'servidores de férias'}${st.setor?` em ${esc(st.setor)}`:''}`;
+  $('rList').innerHTML = n === 0
+    ? `<p class="empty">${st.recs.length ? 'Todos os servidores estão em exercício nesta data.' : 'Nenhuma férias cadastrada ainda. Use “Agendar férias” para incluir o primeiro período.'}</p>`
+    : `<ul class="plist">${on.map(({r,p,i}) => `
+        <li>
+          <span class="dot" style="background:${corSetor(r.setor)}"></span>
+          <div><div class="name">${esc(r.nome)}</div><div class="sub">${esc(r.setor)}, ${TIPOS[tipoDe(r)].toLowerCase()}${periodos(r).length>1?` (${i+1}º período)`:''}, ${fmtC(p.inicio)} a ${fmtC(p.fim)}</div></div>
+          <div class="ret">retorno<b>${fmt(retorno(p.fim))}</b></div>
+        </li>`).join('')}</ul>`;
+
+  const lim = addDays(st.data, 30), up = [];
+  visiveis().forEach(r => periodos(r).forEach(p => { if (p.inicio > st.data && p.inicio <= lim) up.push({r,p}); }));
+  up.sort((a,b) => a.p.inicio.localeCompare(b.p.inicio));
+  $('uList').innerHTML = up.length
+    ? `<ul class="plist">${up.map(({r,p}) => { const pr = tipoDe(r)==='premio'; return `
+        <li>
+          <span class="dot" style="background:${corSetor(r.setor)}"></span>
+          <div><div class="name">${esc(r.nome)}</div><div class="sub">${esc(r.setor)}, ${TIPOS[tipoDe(r)].toLowerCase()}</div></div>
+          <div class="ret">${fmtC(p.inicio)} a ${fmtC(p.fim)}<b>${pr ? corridos(p.inicio,p.fim)+' dias corridos' : uteis(p.inicio,p.fim)+' dias úteis'}</b></div>
+        </li>`; }).join('')}</ul>`
+    : `<p class="empty">Nenhuma saída prevista.</p>`;
+}
+
+function renderTimeline(){
+  const {y,m} = st.mes;
+  const N = new Date(y, m+1, 0).getDate();
+  const ms = iso(new Date(y,m,1)), me = iso(new Date(y,m,N));
+  $('mLabel').textContent = new Date(y,m,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const cols = `grid-template-columns:var(--namew) repeat(${N}, minmax(30px,1fr))`;
+  const today = hoje(), ini = ['D','S','T','Q','Q','S','S'], dayInfo = [];
+  for (let k=1;k<=N;k++){ const ds = iso(new Date(y,m,k)), wd = new Date(y,m,k).getDay(); dayInfo.push({k, ds, wd, we: wd===0||wd===6, hol: st.fer[ds]}); }
+
+  let html = `<div class="tlrow head" style="${cols}"><div class="tlname"><span class="s">Servidor</span></div>` +
+    dayInfo.map(d => `<button class="dhead${d.we?' we':''}${d.hol?' hol':''}${d.ds===st.data?' sel':''}${d.ds===today?' today':''}" style="grid-column:${d.k+1}" data-day="${d.ds}" title="${d.hol?esc(d.hol.descricao):''}" aria-label="Ver quem está de férias em ${fmt(d.ds)}${d.hol?', '+esc(d.hol.descricao):''}">${ini[d.wd]}<b>${d.k}</b></button>`).join('') + `</div>`;
+
+  const rows = visiveis().filter(r => periodos(r).some(p => p.inicio <= me && p.fim >= ms))
+    .sort((a,b) => (a.setor||'').localeCompare(b.setor||'','pt-BR') || (a.nome||'').localeCompare(b.nome||'','pt-BR'));
+
+  if (!rows.length){
+    html += `<div class="tlempty">${st.carregado ? 'Nenhum servidor de férias neste mês.' : 'Carregando…'}</div>`;
+  } else {
+    const bg = dayInfo.map(d => (d.we || d.hol || d.ds===st.data) ? `<div class="dcell${d.we?' we':''}${d.hol?' hol':''}${d.ds===st.data?' sel':''}" style="grid-column:${d.k+1}"></div>` : '').join('');
+    rows.forEach(r => {
+      const cor = corSetor(r.setor), ps = periodos(r), pr = tipoDe(r) === 'premio';
+      const bars = ps.map((p,i) => {
+        if (p.inicio > me || p.fim < ms) return '';
+        const a = p.inicio < ms ? ms : p.inicio, b = p.fim > me ? me : p.fim;
+        const c1 = parse(a).getDate()+1, c2 = parse(b).getDate()+2, span = c2-c1;
+        const lbl = span >= 6 ? `${fmtC(p.inicio)} a ${fmtC(p.fim)}` : (span >= 2 && ps.length>1 ? `${i+1}º` : '');
+        const cont = pr ? `${corridos(p.inicio,p.fim)} dias corridos` : `${uteis(p.inicio,p.fim)} dias úteis`;
+        return `<button class="bar${pr?' premio':''}${p.inicio<ms?' cut-l':''}${p.fim>me?' cut-r':''}" style="grid-column:${c1}/${c2};background-color:${cor}" data-edit="${esc(r.id)}" title="${esc(r.nome)}, ${TIPOS[tipoDe(r)].toLowerCase()}: ${fmt(p.inicio)} a ${fmt(p.fim)} (${cont})">${lbl}</button>`;
+      }).join('');
+      html += `<div class="tlrow" style="${cols}"><div class="tlname"><span class="n">${esc(r.nome)}</span><span class="s">${esc(r.setor)}</span></div>${bg}${bars}</div>`;
+    });
+  }
+  $('tl').innerHTML = html;
+}
+
+function listaTabela(){
+  const q = norm(st.busca);
+  return visiveis().filter(r => !q || norm(r.nome).includes(q)).sort((a,b) => (a.nome||'').localeCompare(b.nome||'','pt-BR'));
+}
+
+function renderTable(){
+  if (!st.carregado){ $('tbl').innerHTML = `<div class="tlempty">Carregando…</div>`; return; }
+  const list = listaTabela();
+  if (!list.length){ $('tbl').innerHTML = `<div class="tlempty">${st.recs.length ? 'Nenhum servidor encontrado com esse filtro.' : 'Nenhuma férias cadastrada ainda.'}</div>`; return; }
+  const per = p => p ? `${fmt(p.inicio)} a ${fmt(p.fim)}` : '<span style="color:var(--muted)">—</span>';
+  const sit = r => { const s = situacaoTxt(r); return `<span class="tag ${s==='De férias'?'on':s==='Agendada'?'next':''}">${s}</span>`; };
+  $('tbl').innerHTML = `<table>
+    <thead><tr><th>Servidor</th><th>Setor</th><th>Modalidade</th><th>1º período</th><th>2º período</th><th>Dias</th><th>Situação</th><th><span class="sr">Ações</span></th></tr></thead>
+    <tbody>${list.map(r => { const ps = periodos(r), c = contagem(r); return `
+      <tr>
+        <td class="nm">${esc(r.nome)}</td>
+        <td><span class="setor"><span class="dot" style="background:${corSetor(r.setor)}"></span>${esc(r.setor)}</span></td>
+        <td>${TIPOS[tipoDe(r)]}${r.exercicio?`<span class="small">Exercício ${esc(r.exercicio)}</span>`:''}</td>
+        <td>${per(ps[0])}</td><td>${per(ps[1])}</td>
+        <td>${c.n} ${c.un}${c.excede?`<span class="small"><span class="tag alert">Acima de ${c.lim}</span></span>`:''}</td>
+        <td>${sit(r)}</td>
+        <td class="acts">${st.canWrite ? `<button class="btn small" data-edit="${esc(r.id)}">Editar</button> <button class="btn small ghost" data-del="${esc(r.id)}">Excluir</button>` : ''}</td>
+      </tr>`; }).join('')}</tbody></table>`;
+}
+
+/* ---------- formulário de férias ---------- */
+let lastFocus = null;
+const tipoForm = () => document.querySelector('input[name=tipo]:checked').value;
+function aplicarTipo(){
+  const pr = tipoForm() === 'premio';
+  $('fracWrap').hidden = pr;
+  if (pr){ $('fFrac').checked = false; $('p2box').hidden = true; }
+  $('p1label').textContent = pr || !$('fFrac').checked ? 'Período' : '1º período';
+}
+
+function openForm(id){
+  if (!st.canWrite) return;
+  st.editId = id || null;
+  const r = id ? st.recs.find(x => x.id === id) : null;
+  const ps = r ? periodos(r) : [];
+  $('fTitle').textContent = r ? 'Editar férias' : 'Agendar férias';
+  document.querySelector(`input[name=tipo][value=${r ? tipoDe(r) : 'regulamentar'}]`).checked = true;
+  $('fNome').value = r ? r.nome : '';
+  $('fSetor').value = r ? r.setor : (st.setor || '');
+  $('fExerc').value = r?.exercicio || '';
+  $('p1i').value = ps[0]?.inicio || ''; $('p1f').value = ps[0]?.fim || '';
+  $('p2i').value = ps[1]?.inicio || ''; $('p2f').value = ps[1]?.fim || '';
+  ['p1f','p2f'].forEach(k => $(k).dataset.auto = $(k).value ? '0' : '1');
+  $('fFrac').checked = ps.length > 1; $('p2box').hidden = ps.length <= 1;
+  $('fErr').innerHTML = '';
+  aplicarTipo();
+  lastFocus = document.activeElement;
+  $('ovForm').classList.add('open');
+  updateForm();
+  setTimeout(()=>$('fNome').focus(), 0);
+}
+function closeForm(){ $('ovForm').classList.remove('open'); if (lastFocus) lastFocus.focus(); }
+
+function lerPeriodos(){
+  const out = [{inicio:$('p1i').value, fim:$('p1f').value}];
+  if ($('fFrac').checked && tipoForm() === 'regulamentar') out.push({inicio:$('p2i').value, fim:$('p2f').value});
+  return out;
+}
+const pOk = p => p && validDate(p.inicio) && validDate(p.fim) && p.fim >= p.inicio;
+
+function autoFim(k){
+  const ini = $(`p${k}i`).value, fimEl = $(`p${k}f`);
+  if (!validDate(ini) || fimEl.dataset.auto === '0') return;
+  if (tipoForm() === 'premio') fimEl.value = addDays(ini, LIMITE_PREMIO - 1);
+  else {
+    const outro = lerPeriodos()[k === 1 ? 1 : 0];
+    const usados = $('fFrac').checked && pOk(outro) ? uteis(outro.inicio, outro.fim) : 0;
+    fimEl.value = fimPorUteis(ini, Math.max(1, LIMITE_REG - usados));
+  }
+}
+
+function updateForm(){
+  const pr = tipoForm() === 'premio', ps = lerPeriodos();
+  const lbl = (p, el) => { $(el).innerHTML = pOk(p) ? (pr ? `${corridos(p.inicio,p.fim)} dias corridos` : `${uteis(p.inicio,p.fim)} dias úteis<br>${corridos(p.inicio,p.fim)} corridos`) : ''; };
+  lbl(ps[0],'p1d'); lbl(ps[1],'p2d');
+  const ok = ps.filter(pOk);
+  const tot = ok.reduce((s,p) => s + (pr ? corridos(p.inicio,p.fim) : uteis(p.inicio,p.fim)), 0);
+  const lim = pr ? LIMITE_PREMIO : LIMITE_REG, un = pr ? 'dias corridos' : 'dias úteis';
+  $('fTotal').textContent = tot ? `Total: ${tot} de ${lim} ${un}` : '';
+
+  const warns = [];
+  if (tot > lim) warns.push(pr
+    ? `O período marcado tem ${tot} dias corridos, acima dos ${LIMITE_PREMIO} dias das férias-prêmio.`
+    : `O total marcado é de ${tot} dias úteis, acima dos ${LIMITE_REG} dias úteis de direito das férias regulamentares.`);
+  const fs = ok.map(p => p.inicio);
+  ok.forEach(p => { if (!isUtil(p.inicio)) warns.push(`O início em ${fmt(p.inicio)} cai em ${isFeriado(p.inicio) ? 'feriado' : 'fim de semana'}.`); });
+
+  const setor = $('fSetor').value.trim(), conf = [];
+  if (setor && ok.length){
+    st.recs.forEach(r => {
+      if (r.id === st.editId || norm(r.setor) !== norm(setor)) return;
+      periodos(r).forEach(p => { if (ok.some(q => overlap(p,q))) conf.push(`${r.nome} (${fmtC(p.inicio)} a ${fmtC(p.fim)})`); });
+    });
+  }
+  if (conf.length) warns.push(`Também estará de férias no mesmo setor: ${[...new Set(conf)].join(', ')}.`);
+  $('fWarn').innerHTML = warns.map(w => `<div class="msg warn">${esc(w)}</div>`).join('');
+}
+
+function validar(){
+  if (!$('fNome').value.trim()) return 'Informe o nome do servidor.';
+  if (!$('fSetor').value.trim()) return 'Informe o setor.';
+  const ps = lerPeriodos();
+  for (let i=0;i<ps.length;i++){
+    const p = ps[i], n = ps.length>1 ? `do ${i+1}º período` : 'do período';
+    if (!validDate(p.inicio) || !validDate(p.fim)) return `Preencha as datas de início e fim ${n}.`;
+    if (p.fim < p.inicio) return `A data final ${n} é anterior à data de início.`;
+  }
+  if (ps.length === 2 && overlap(ps[0], ps[1])) return 'Os dois períodos se sobrepõem. Ajuste as datas.';
+  return null;
+}
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = validar();
+  if (err){ $('fErr').innerHTML = `<div class="msg err">${esc(err)}</div>`; return; }
+  const ps = lerPeriodos().sort((a,b)=>a.inicio.localeCompare(b.inicio));
+  const data = { nome: $('fNome').value.trim(), setor: $('fSetor').value.trim(), tipo: tipoForm(),
+    exercicio: $('fExerc').value.trim(), periodos: ps, atualizadoEm: new Date().toISOString() };
+  const btn = $('fSave'); btn.disabled = true; btn.textContent = 'Salvando…';
+  try {
+    await store.save(st.editId, data);
+    closeForm(); showToast(st.editId ? 'Férias atualizadas' : 'Férias salvas');
+  } catch(ex){
+    const code = ex && ex.code;
+    if (code === 'invalid_argument'){ st.canWrite = false; render(); $('fErr').innerHTML = `<div class="msg err">Você não tem permissão para salvar nesta página.</div>`; }
+    else if (code === 'quota_exceeded') $('fErr').innerHTML = `<div class="msg err">O limite de registros foi atingido. Exclua férias antigas para liberar espaço.</div>`;
+    else $('fErr').innerHTML = `<div class="msg err">Não foi possível salvar. Verifique a conexão e tente novamente.</div>`;
+  } finally { btn.disabled = false; btn.textContent = 'Salvar férias'; }
+});
+
+['fNome','fSetor','fExerc'].forEach(id => $(id).addEventListener('input', () => { $('fErr').innerHTML=''; updateForm(); }));
+[1,2].forEach(k => {
+  $(`p${k}i`).addEventListener('change', () => { autoFim(k); $('fErr').innerHTML=''; updateForm(); });
+  $(`p${k}f`).addEventListener('change', () => { $(`p${k}f`).dataset.auto = $(`p${k}f`).value ? '0' : '1'; $('fErr').innerHTML=''; updateForm(); });
+});
+document.querySelectorAll('input[name=tipo]').forEach(r => r.addEventListener('change', () => {
+  aplicarTipo(); autoFim(1); updateForm();
+}));
+$('fFrac').addEventListener('change', () => {
+  $('p2box').hidden = !$('fFrac').checked; aplicarTipo();
+  if ($('fFrac').checked){ if ($('p1f').dataset.auto === '1' || !$('p1f').value) { $('p1f').dataset.auto = '1'; } $('p2i').focus(); }
+  updateForm();
+});
+$('fCancel').addEventListener('click', closeForm);
+
+/* ---------- feriados ---------- */
+function openHol(){ lastFocus = document.activeElement; $('hErr').innerHTML=''; renderHol(); $('ovHol').classList.add('open'); setTimeout(()=>$('hClose').focus(),0); }
+function closeHol(){ $('ovHol').classList.remove('open'); if (lastFocus) lastFocus.focus(); }
+function renderHol(){
+  const y = st.holYear; $('hYear').textContent = y;
+  const items = Object.entries(st.fer).filter(([d]) => d.startsWith(y+'-')).sort(([a],[b]) => a.localeCompare(b));
+  $('hNac').disabled = !st.canWrite; $('hForm').querySelector('button').disabled = !st.canWrite;
+  $('hList').innerHTML = items.length ? items.map(([d,f]) => `
+    <li><span>${fmt(d)}<span class="wd">${parse(d).toLocaleDateString('pt-BR',{weekday:'long'})}</span></span>
+      <span>${esc(f.descricao)}</span>
+      <span class="tag">${TIPOS_FER[f.tipo] || 'Feriado'}</span>
+      ${st.canWrite ? `<button class="btn small ghost" data-delfer="${d}" aria-label="Excluir ${esc(f.descricao)}">Excluir</button>` : '<span></span>'}
+    </li>`).join('') : `<li><span class="emptyli">Nenhum feriado cadastrado em ${y}.</span></li>`;
+}
+$('hForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const d = $('hData').value, desc = $('hDesc').value.trim();
+  if (!validDate(d)) { $('hErr').innerHTML = `<div class="msg err">Informe a data do feriado.</div>`; return; }
+  if (!desc) { $('hErr').innerHTML = `<div class="msg err">Informe a descrição do feriado.</div>`; return; }
+  try {
+    await store.saveFer(d, { descricao: desc, tipo: $('hTipo').value });
+    $('hErr').innerHTML = ''; $('hDesc').value = ''; $('hData').value = '';
+    st.holYear = parse(d).getFullYear(); renderHol(); showToast('Feriado incluído');
+  } catch(ex){ $('hErr').innerHTML = `<div class="msg err">Não foi possível incluir o feriado. Tente novamente.</div>`; }
+});
+$('hNac').addEventListener('click', async () => {
+  const novos = nacionais(st.holYear).filter(([d]) => !st.fer[d]);
+  if (!novos.length){ showToast(`Os feriados nacionais de ${st.holYear} já estão cadastrados`); return; }
+  $('hNac').disabled = true;
+  try { await Promise.all(novos.map(([d,desc]) => store.saveFer(d, { descricao: desc, tipo: 'nacional' }))); showToast(`${novos.length} feriados nacionais incluídos`); }
+  catch(e){ $('hErr').innerHTML = `<div class="msg err">Alguns feriados não foram incluídos. Tente novamente.</div>`; }
+  finally { $('hNac').disabled = !st.canWrite; }
+});
+$('hPrev').addEventListener('click', () => { st.holYear--; renderHol(); });
+$('hNext').addEventListener('click', () => { st.holYear++; renderHol(); });
+$('hClose').addEventListener('click', closeHol);
+
+/* ---------- exclusão ---------- */
+function openDel(id){
+  const r = st.recs.find(x => x.id === id); if (!r) return;
+  st.delId = id; lastFocus = document.activeElement;
+  $('dText').textContent = `Excluir as ${TIPOS[tipoDe(r)].toLowerCase()} de ${r.nome}? ${periodos(r).length>1?'Os dois períodos serão removidos.':'O período será removido.'}`;
+  $('ovDel').classList.add('open'); setTimeout(()=>$('dCancel').focus(),0);
+}
+function closeDel(){ $('ovDel').classList.remove('open'); if (lastFocus) lastFocus.focus(); }
+$('dCancel').addEventListener('click', closeDel);
+$('dOk').addEventListener('click', async () => {
+  try { await store.remove(st.delId); closeDel(); showToast('Férias excluídas'); }
+  catch(e){ closeDel(); showToast('Não foi possível excluir. Tente novamente.'); }
+});
+
+/* ---------- exportação ---------- */
+function linhasExport(){
+  return visiveis().slice().sort((a,b) => (a.setor||'').localeCompare(b.setor||'','pt-BR') || (a.nome||'').localeCompare(b.nome||'','pt-BR'));
+}
+async function salvar(filename, data, okMsg){
+  try { await downloads.save({ filename, data }); showToast(okMsg); }
+  catch(e){
+    if (e && e.code === 'declined') return;
+    if (e && e.code === 'rate_limited') showToast('Já existe um download aguardando confirmação.');
+    else showToast('Não foi possível gerar o arquivo neste acesso.');
+  }
+}
+const sufixo = () => `${hoje()}${st.setor ? '-' + norm(st.setor).replace(/[^a-z0-9]+/g,'-') : ''}`;
+
+async function exportarXlsx(){
+  if (!window.XLSX){ showToast('O gerador de planilhas ainda está carregando. Tente em instantes.'); return; }
+  const head = ['Servidor','Setor','Modalidade','Exercício','1º período início','1º período fim','1º período dias','2º período início','2º período fim','2º período dias','Total de dias','Contagem','Limite','Acima do limite','Situação','Retorno previsto'];
+  const rows = linhasExport().map(r => {
+    const ps = periodos(r), c = contagem(r), pr = tipoDe(r) === 'premio';
+    const dd = p => p ? (pr ? corridos(p.inicio,p.fim) : uteis(p.inicio,p.fim)) : '';
+    const last = ps[ps.length-1];
+    return [r.nome, r.setor, TIPOS[tipoDe(r)], r.exercicio || '',
+      ps[0] ? fmt(ps[0].inicio) : '', ps[0] ? fmt(ps[0].fim) : '', dd(ps[0]),
+      ps[1] ? fmt(ps[1].inicio) : '', ps[1] ? fmt(ps[1].fim) : '', dd(ps[1]),
+      c.n, pr ? 'Dias corridos' : 'Dias úteis', c.lim, c.excede ? 'Sim' : 'Não', situacaoTxt(r), last ? fmt(retorno(last.fim)) : ''];
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([head, ...rows]);
+  ws['!cols'] = [28,22,22,12,14,14,10,14,14,10,10,13,8,14,12,15].map(w => ({ wch: w }));
+  ws['!autofilter'] = { ref: `A1:P${rows.length+1}` };
+  XLSX.utils.book_append_sheet(wb, ws, 'Férias');
+  const fer = Object.entries(st.fer).sort(([a],[b]) => a.localeCompare(b)).map(([d,f]) => [fmt(d), parse(d).toLocaleDateString('pt-BR',{weekday:'long'}), f.descricao, TIPOS_FER[f.tipo] || 'Feriado']);
+  const wf = XLSX.utils.aoa_to_sheet([['Data','Dia da semana','Descrição','Tipo'], ...fer]);
+  wf['!cols'] = [12,16,44,18].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, wf, 'Feriados');
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  await salvar(`controle-ferias-${sufixo()}.xlsx`, new Uint8Array(buf), 'Planilha exportada');
+}
+
+async function exportarPdf(){
+  if (!window.jspdf || !window.jspdf.jsPDF){ showToast('O gerador de PDF ainda está carregando. Tente em instantes.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  if (typeof doc.autoTable !== 'function'){ showToast('O gerador de PDF ainda está carregando. Tente em instantes.'); return; }
+  const W = doc.internal.pageSize.getWidth();
+  const lista = linhasExport();
+  const ink = [16,39,58];
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...ink);
+  doc.text('Relatório de controle de férias', 14, 16);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(86,105,122);
+  doc.text(`Emitido em ${new Date().toLocaleString('pt-BR')}   |   Setor: ${st.setor || 'todos'}   |   Registros: ${lista.length}`, 14, 22);
+
+  const nReg = lista.filter(r => tipoDe(r)==='regulamentar').length, nPr = lista.length - nReg;
+  const nAl = lista.filter(r => contagem(r).excede).length;
+  const nOn = lista.filter(r => situacaoTxt(r)==='De férias').length;
+  doc.text(`Férias regulamentares: ${nReg}   |   Férias-prêmio: ${nPr}   |   De férias hoje: ${nOn}   |   Acima do limite: ${nAl}`, 14, 27);
+
+  const footer = () => {
+    const n = doc.internal.getNumberOfPages();
+    doc.setFontSize(8); doc.setTextColor(120);
+    doc.text(`Página ${n}`, W - 14, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+    doc.text('Controle de férias', 14, doc.internal.pageSize.getHeight() - 8);
+  };
+
+  const body = lista.map(r => {
+    const ps = periodos(r), c = contagem(r), last = ps[ps.length-1];
+    const pp = p => p ? `${fmt(p.inicio)} a ${fmt(p.fim)}` : '-';
+    return [r.nome, r.setor, TIPOS[tipoDe(r)] + (r.exercicio ? `\nExercício ${r.exercicio}` : ''), pp(ps[0]), pp(ps[1]),
+      `${c.n} ${c.un}${c.excede ? `\nACIMA DE ${c.lim}` : ''}`, situacaoTxt(r), last ? fmt(retorno(last.fim)) : '-'];
+  });
+  doc.autoTable({
+    startY: 32,
+    head: [['Servidor','Setor','Modalidade','1º período','2º período','Dias','Situação','Retorno']],
+    body: body.length ? body : [['Nenhuma férias cadastrada','','','','','','','']],
+    styles: { fontSize: 8.5, cellPadding: 2.2, textColor: ink, lineColor: [214,223,229], lineWidth: 0.1 },
+    headStyles: { fillColor: ink, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [243,246,248] },
+    columnStyles: { 0: { cellWidth: 52 }, 5: { cellWidth: 26 } },
+    didParseCell: h => { if (h.section === 'body' && h.column.index === 5 && String(h.cell.raw).includes('ACIMA')) { h.cell.styles.textColor = [180,35,24]; h.cell.styles.fontStyle = 'bold'; } },
+    didDrawPage: footer,
+    margin: { left: 14, right: 14, bottom: 14 }
+  });
+
+  const on = emFerias(st.data);
+  let y = doc.lastAutoTable.finalY + 10;
+  if (y > doc.internal.pageSize.getHeight() - 40){ doc.addPage(); y = 18; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...ink);
+  doc.text(`Servidores de férias em ${fmt(st.data)}`, 14, y);
+  doc.autoTable({
+    startY: y + 3,
+    head: [['Servidor','Setor','Modalidade','Período','Retorno']],
+    body: on.length ? on.map(({r,p}) => [r.nome, r.setor, TIPOS[tipoDe(r)], `${fmt(p.inicio)} a ${fmt(p.fim)}`, fmt(retorno(p.fim))]) : [['Nenhum servidor de férias nesta data','','','','']],
+    styles: { fontSize: 8.5, cellPadding: 2.2, textColor: ink, lineColor: [214,223,229], lineWidth: 0.1 },
+    headStyles: { fillColor: [13,101,102], textColor: 255 },
+    didDrawPage: footer, margin: { left: 14, right: 14, bottom: 14 }
+  });
+
+  const fy = Object.entries(st.fer).filter(([d]) => d.startsWith(parse(st.data).getFullYear()+'-')).sort(([a],[b]) => a.localeCompare(b));
+  if (fy.length){
+    y = doc.lastAutoTable.finalY + 10;
+    if (y > doc.internal.pageSize.getHeight() - 40){ doc.addPage(); y = 18; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...ink);
+    doc.text(`Feriados considerados em ${parse(st.data).getFullYear()}`, 14, y);
+    doc.autoTable({
+      startY: y + 3, head: [['Data','Dia da semana','Descrição','Tipo']],
+      body: fy.map(([d,f]) => [fmt(d), parse(d).toLocaleDateString('pt-BR',{weekday:'long'}), f.descricao, TIPOS_FER[f.tipo] || 'Feriado']),
+      styles: { fontSize: 8.5, cellPadding: 2, textColor: ink, lineColor: [214,223,229], lineWidth: 0.1 },
+      headStyles: { fillColor: [86,105,122], textColor: 255 },
+      didDrawPage: footer, margin: { left: 14, right: 14, bottom: 14 }
+    });
+  }
+  await salvar(`relatorio-ferias-${sufixo()}.pdf`, doc.output('blob'), 'Relatório gerado');
+}
+$('btnXlsx').addEventListener('click', exportarXlsx);
+$('btnPdf').addEventListener('click', exportarPdf);
+
+/* ---------- eventos gerais ---------- */
+function setData(s){
+  if (!validDate(s)) return;
+  st.data = s; const d = parse(s); st.mes = { y: d.getFullYear(), m: d.getMonth() }; render();
+}
+$('btnNovo').addEventListener('click', () => openForm(null));
+$('btnFer').addEventListener('click', openHol);
+$('qPrev').addEventListener('click', () => setData(addDays(st.data,-1)));
+$('qNext').addEventListener('click', () => setData(addDays(st.data,1)));
+$('qToday').addEventListener('click', () => setData(hoje()));
+$('qInput').addEventListener('change', e => setData(e.target.value));
+$('mPrev').addEventListener('click', () => { let {y,m} = st.mes; m--; if (m<0){m=11;y--;} st.mes={y,m}; renderTimeline(); });
+$('mNext').addEventListener('click', () => { let {y,m} = st.mes; m++; if (m>11){m=0;y++;} st.mes={y,m}; renderTimeline(); });
+$('busca').addEventListener('input', e => { st.busca = e.target.value; renderTable(); });
+
+document.addEventListener('click', e => {
+  const chip = e.target.closest('[data-s]');
+  if (chip){ st.setor = chip.dataset.s; render(); return; }
+  const day = e.target.closest('[data-day]');
+  if (day){
+    st.data = day.dataset.day; render();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.hero').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'start'});
+    return;
+  }
+  const df = e.target.closest('[data-delfer]');
+  if (df){ store.removeFer(df.dataset.delfer).then(() => showToast('Feriado excluído')).catch(() => showToast('Não foi possível excluir o feriado.')); return; }
+  const ed = e.target.closest('[data-edit]');
+  if (ed){ if (st.canWrite) openForm(ed.dataset.edit); return; }
+  const del = e.target.closest('[data-del]');
+  if (del){ openDel(del.dataset.del); return; }
+  if (e.target === $('ovForm')) closeForm();
+  if (e.target === $('ovDel')) closeDel();
+  if (e.target === $('ovHol')) closeHol();
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('ovDel').classList.contains('open')) closeDel();
+  else if ($('ovForm').classList.contains('open')) closeForm();
+  else if ($('ovHol').classList.contains('open')) closeHol();
+});
+
+render();
+initStore();
+initDownloads();
+</script>
+
+
+</body></html>
